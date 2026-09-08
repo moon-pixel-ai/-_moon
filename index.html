@@ -6843,10 +6843,14 @@ var Game2=(function(){
    소인 탐사정을 좌우로 몰며 혈관을 막는 덩어리를 쏜다.
 ================================================================== */
 var GameV=(function(){
-  const W=880, LIVES=3, WAVES=3;
+  const W=880, LIVES=4, WAVES=3;
   let H=495,cv,ctx,raf=null,live=false,last=0;
-  let ship=W/2, bullets=[], foes=[], ebul=[], fx=[], wave=0, lives=LIVES, killed=0, tSw=0, dive=0, msg='', msgT=0;
-  let left=false,right=false,shootHeld=false,cool=0;
+  let ship={x:W/2,y:0}, bullets=[], foes=[], ebul=[], fx=[], wave=0, lives=LIVES, killed=0,
+      tSw=0, dive=0, msg='', msgT=0;
+  let left=false,right=false,up=false,down=false,cool=0;
+  let drag=null;                       // 화면을 끄는 중인 손가락 {id,x,y}
+  const yLo=()=>H*0.55, yHi=()=>H*0.88;   // 탐사정이 다닐 수 있는 앞뒤 범위
+  let inv=0;                              // 피격 직후 잠깐 무적 (손가락이 화면에 있어 연달아 맞기 쉽다)
 
   /* 웨이브마다 대열 모양이 달라진다 */
   const FORMS=[
@@ -6882,12 +6886,16 @@ var GameV=(function(){
     }
   }
   function drawShip(){
-    const y=H*0.86;
+    const x=ship.x, y=ship.y;
+    if(inv>0 && Math.floor(inv*10)%2) return;      // 무적 동안은 깜박인다
+    // 손을 대고 있을 때는 배 둘레에 옅은 고리 — 지금 내가 잡고 있다는 표시
+    if(drag){ ctx.strokeStyle='rgba(143,230,240,.45)'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(x,y,34,0,7); ctx.stroke(); }
     ctx.fillStyle='#8fe6f0';
-    ctx.beginPath(); ctx.moveTo(ship,y-22); ctx.lineTo(ship+20,y+16); ctx.lineTo(ship,y+8);
-    ctx.lineTo(ship-20,y+16); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#eef3f9'; ctx.beginPath(); ctx.arc(ship,y-2,7,0,7); ctx.fill();
-    ctx.fillStyle='#3b3026'; ctx.beginPath(); ctx.arc(ship,y-4,4,0,7); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x,y-22); ctx.lineTo(x+20,y+16); ctx.lineTo(x,y+8);
+    ctx.lineTo(x-20,y+16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#eef3f9'; ctx.beginPath(); ctx.arc(x,y-2,7,0,7); ctx.fill();
+    ctx.fillStyle='#3b3026'; ctx.beginPath(); ctx.arc(x,y-4,4,0,7); ctx.fill();
   }
   function drawFoe(f){
     const F=FORMS[wave];
@@ -6904,12 +6912,15 @@ var GameV=(function(){
     if(!live) return; raf=requestAnimationFrame(loop);
     const dt=Math.min((ts-last)/1000,.05); last=ts;
     const F=FORMS[wave];
-    tSw+=dt; if(msgT>0) msgT-=dt;
-    // 조작
-    if(left)  ship=clamp(ship-460*dt, 26, W-26);
-    if(right) ship=clamp(ship+460*dt, 26, W-26);
-    cool-=dt;
-    if(shootHeld && cool<=0){ bullets.push({x:ship,y:H*0.84}); cool=0.22; }
+    tSw+=dt; if(msgT>0) msgT-=dt; if(inv>0) inv-=dt;
+    // 조작 — 키보드(교사용)와 손가락 끌기(태블릿)를 함께 받는다
+    if(left)  ship.x-=460*dt;
+    if(right) ship.x+=460*dt;
+    if(up)    ship.y-=380*dt;
+    if(down)  ship.y+=380*dt;
+    ship.x=clamp(ship.x,26,W-26); ship.y=clamp(ship.y,yLo(),yHi());
+    cool-=dt;                       // 사격은 자동 — 아이들은 피하고 겨누는 데만 집중한다
+    if(cool<=0){ bullets.push({x:ship.x,y:ship.y-16}); cool=0.16; }
     // 대열 흔들림
     const sway=Math.sin(tSw*0.9)*W*0.055;
     foes.forEach(f=>{
@@ -6934,7 +6945,7 @@ var GameV=(function(){
         f.path={t:0,y0:f.y}; }
     }
     // 적 사격
-    if(Math.random()<0.9*dt*(1+wave*0.5) && foes.length){
+    if(Math.random()<0.72*dt*(1+wave*0.45) && foes.length){
       const f=foes[(Math.random()*foes.length)|0];
       ebul.push({x:f.x,y:f.y+16});
     }
@@ -6942,7 +6953,9 @@ var GameV=(function(){
     // 내 탄
     ctx.fillStyle='#8fe6f0';
     for(let i=bullets.length-1;i>=0;i--){
-      const b=bullets[i]; b.y-=560*dt;
+      const b=bullets[i];
+      if(!b) break;
+      b.y-=560*dt;
       if(b.y<H*0.05){ bullets.splice(i,1); continue; }
       ctx.fillRect(b.x-2.5,b.y-12,5,14);
       for(let j=foes.length-1;j>=0;j--){
@@ -6957,16 +6970,18 @@ var GameV=(function(){
     // 적 탄
     ctx.fillStyle='#ffd15c';
     for(let i=ebul.length-1;i>=0;i--){
-      const b=ebul[i]; b.y+=250*dt;
+      const b=ebul[i];
+      if(!b) break;                 // hit() 이 ebul 을 비워 버린 뒤라면 여기서 끝낸다
+      b.y+=250*dt;
       if(b.y>H){ ebul.splice(i,1); continue; }
       ctx.beginPath(); ctx.arc(b.x,b.y,5,0,7); ctx.fill();
-      if(Math.abs(b.x-ship)<20 && Math.abs(b.y-H*0.86)<20){
-        ebul.splice(i,1); hit(); continue;
+      if(inv<=0 && Math.abs(b.x-ship.x)<20 && Math.abs(b.y-ship.y)<20){
+        ebul.splice(i,1); hit(); break;
       }
     }
     foes.forEach(drawFoe);
     // 급강하 충돌
-    foes.forEach(f=>{ if(f.path && Math.hypot(f.x-ship,f.y-H*0.86)<26){ f.path=null; f.y=f.hy; hit(); } });
+    if(inv<=0) foes.forEach(f=>{ if(f.path && Math.hypot(f.x-ship.x,f.y-ship.y)<28){ f.path=null; f.y=f.hy; hit(); } });
     drawShip();
     for(let i=fx.length-1;i>=0;i--){ const e=fx[i]; e.t+=dt;
       ctx.globalAlpha=Math.max(0,1-e.t*2.4); ctx.strokeStyle='#ffd15c'; ctx.lineWidth=3;
@@ -6985,13 +7000,13 @@ var GameV=(function(){
     }
   }
   function hit(){
-    lives--; fx.push({x:ship,y:H*0.86,t:0}); sync();
+    lives--; inv=1.4; fx.push({x:ship.x,y:ship.y,t:0}); sync();
     ebul=[]; foes.forEach(f=>{ f.path=null; f.y=f.hy; });
     if(lives<=0) return finish(false);
     say('탐사정 손상! 남은 기체 '+lives);
   }
   function sync(){ $('#gScore').textContent=killed; $('#gMiss').textContent=Math.max(lives,0);
-    $('#gOrder').textContent='🚀 좌우로 움직이며 혈관을 막는 덩어리를 쏘세요 — 급강하하는 놈을 조심!'; }
+    $('#gOrder').textContent='🚀 화면을 끌어 탐사정을 움직이세요 — 총알은 저절로 나갑니다. 급강하하는 놈을 조심!'; }
   function finish(win){
     live=false; cancelAnimationFrame(raf); raf=null;
     GameHost.over(win
@@ -7007,42 +7022,56 @@ var GameV=(function(){
     const dpr=Math.min(devicePixelRatio||1,2), sc=r.width*dpr/W;
     cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
     ctx.setTransform(sc,0,0,sc,0,0);
+    ship.y=clamp(ship.y||H*0.86, yLo(), yHi());
   }
   function start(){
     cv=$('#gCanvas'); ctx=cv.getContext('2d');
-    wave=0; lives=LIVES; killed=0; fx=[]; ship=W/2;
-    $('#gOver').classList.remove('on'); resize(); spawnWave(); sync();
-    const L=$('#gvL'), R=$('#gvR'), S=$('#gvS');
-    const bind=(el,set)=>{ if(!el) return;
-      el.onpointerdown=e=>{ e.preventDefault(); set(true); };
-      el.onpointerup=()=>set(false); el.onpointerleave=()=>set(false);
-      el.onpointercancel=()=>set(false); };
-    bind(L,v=>left=v); bind(R,v=>right=v); bind(S,v=>shootHeld=v);
+    wave=0; lives=LIVES; killed=0; fx=[]; drag=null; inv=0;
+    $('#gOver').classList.remove('on');
+    ship={x:W/2,y:0}; resize(); ship.y=H*0.86;
+    spawnWave(); sync();
     live=true; last=performance.now(); cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
   }
-  function stop(){ live=false; cancelAnimationFrame(raf); raf=null; left=right=shootHeld=false; }
+  function stop(){ live=false; cancelAnimationFrame(raf); raf=null;
+    left=right=up=down=false; drag=null; }
   addEventListener('resize',()=>{ if(live) resize(); });
   addEventListener('keydown',e=>{ if(!live) return;
-    if(e.key==='ArrowLeft') left=true;
+    if(e.key==='ArrowLeft')  left=true;
     if(e.key==='ArrowRight') right=true;
-    if(e.key===' '){ e.preventDefault(); shootHeld=true; } });
+    if(e.key==='ArrowUp')  { e.preventDefault(); up=true; }
+    if(e.key==='ArrowDown'){ e.preventDefault(); down=true; } });
   addEventListener('keyup',e=>{
-    if(e.key==='ArrowLeft') left=false;
+    if(e.key==='ArrowLeft')  left=false;
     if(e.key==='ArrowRight') right=false;
-    if(e.key===' ') shootHeld=false; });
-  /* 화면을 직접 눌러도 조작되게 — 태블릿에서 좌/우 절반 + 자동 사격 */
+    if(e.key==='ArrowUp')    up=false;
+    if(e.key==='ArrowDown')  down=false; });
+
+  /* 태블릿 조작 — 화면에 손을 대고 끄는 방향으로 탐사정이 따라온다.
+     손가락 밑에 배가 숨지 않도록 '움직인 만큼'만 옮기는 상대 이동으로 만들었다. */
   (function touch(){
     const w=$('#gWrap');
-    w.addEventListener('pointerdown',e=>{ if(!live) return;
-      const r=w.getBoundingClientRect(), x=(e.clientX-r.left)/r.width;
-      if(x<0.5) left=true; else right=true; shootHeld=true; });
-    w.addEventListener('pointerup',()=>{ left=right=false; shootHeld=false; });
-    w.addEventListener('pointerleave',()=>{ left=right=false; shootHeld=false; });
+    const pt=e=>{ const r=w.getBoundingClientRect(), k=W/r.width;
+      return {x:(e.clientX-r.left)*k, y:(e.clientY-r.top)*k}; };
+    w.addEventListener('pointerdown',e=>{
+      if(!live) return; e.preventDefault();
+      const p=pt(e); drag={id:e.pointerId, x:p.x, y:p.y};
+      try{ w.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    w.addEventListener('pointermove',e=>{
+      if(!live || !drag || e.pointerId!==drag.id) return;
+      const p=pt(e);
+      ship.x=clamp(ship.x+(p.x-drag.x), 26, W-26);
+      ship.y=clamp(ship.y+(p.y-drag.y), yLo(), yHi());
+      drag.x=p.x; drag.y=p.y;
+    });
+    const end=e=>{ if(drag && (!e || e.pointerId===drag.id)) drag=null; };
+    w.addEventListener('pointerup',end);
+    w.addEventListener('pointercancel',end);
   })();
   return { head:'퀘스트 · 혈관 청소대', p1:'제거', p2:'♥ 남은 기체', n2:LIVES,
-    sub:'좌우로 움직이며 혈관을 막는 덩어리를 쏘세요. 화면 <b style="color:#fff">왼쪽·오른쪽을 누르면</b> 그쪽으로 움직이며 자동으로 쏩니다.',
-    ctl:'<button class="btn" id="gvL">◀ 왼쪽</button><button class="btn" id="gvS">● 발사</button>'+
-        '<button class="btn" id="gvR">오른쪽 ▶</button>',
+    sub:'<b style="color:#fff">화면에 손을 대고 끄는 방향</b>으로 탐사정이 따라옵니다 — 오른쪽으로 끌면 오른쪽, '+
+        '앞으로 끌면 앞으로. <b style="color:#fff">총알은 저절로</b> 나가니 피하고 겨누는 데만 집중하세요.',
+    ctl:'<span class="hint" style="margin:0">🖐 화면 아무 데나 대고 끌면 됩니다 · 키보드는 방향키</span>',
     start, stop, onSkip:()=>{ Store.game('shoot',-1); markStage('vessel'); afterGameV(); } };
 })();
 
