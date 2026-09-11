@@ -252,6 +252,23 @@ main{max-width:1280px;margin:0 auto;padding:20px 16px 80px}
 .sk{flex:0 0 62px;color:var(--labink2);font-weight:700}
 .sv{flex:1;color:#dbe6f4}
 .hi-a{color:#c9b6f0}
+/* Stage 4 — 산소가 많은 쪽 붉게, 적은 쪽 푸르게. 중요 낱말은 노랑 */
+.o2hi{color:#ff8f83;font-weight:800}
+.o2lo{color:#8fb6ff;font-weight:800}
+.kw{color:#ffd27a;font-weight:800}
+.bline p.path{font-size:19px;letter-spacing:.2px;margin:12px 0}
+#rGrid.solo{grid-template-columns:1fr}
+/* 그림만 크게 보기 — 화면을 꽉 채우는 정사각형 */
+#rZoomBg{position:fixed;inset:0;background:rgba(4,8,18,.88);z-index:59;display:none}
+#rZoomBg.on{display:block}
+#rStage{aspect-ratio:1/1;max-height:74vh;margin-inline:auto}
+#rStage.zoom{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(97vw,97vh);height:min(97vw,97vh);max-height:none;aspect-ratio:auto;margin:0;z-index:60}
+#rGrid.solo #rSide{display:none}
+#rGrid.solo #rInfo{padding:10px 15px}
+#rGrid.solo #rInfo h4{margin:0 0 3px}
+#rGrid.solo #rInfo p{margin:0;font-size:14.5px}
+input[type=range].scrub{flex:1;accent-color:#8fe6f0;height:26px}
 .hi-b{color:#f0d68a}
 @media(max-width:640px){ .scard .sbody{flex-direction:column} .scard .spic{max-width:none;flex:none} }
 /* 직접 해 보기 — 구조도 위에서 조작 */
@@ -514,7 +531,7 @@ main{max-width:1280px;margin:0 auto;padding:20px 16px 80px}
 </section>
 
 <!-- ============ Stage 4 혈액의 순환 ============ -->
-<section id="scCirc" class="screen">
+<section id="scCirc" class="screen"><div id="rZoomBg"></div>
   <div class="chart">
     <span class="cl">릴리퍼트 진료소 · 진단 기록</span>
     <span class="cf">환자 <b class="pname">거인</b></span>
@@ -526,27 +543,40 @@ main{max-width:1280px;margin:0 auto;padding:20px 16px 80px}
   <div class="mtip"><div class="mp" id="rTipPor"></div><div class="mb" id="rTip"></div></div>
   <div class="rail" id="rRail"></div>
 
-  <div class="grid g2">
+  <div class="grid g2" id="rGrid">
     <div>
       <!-- 1 한 바퀴 따라가기 -->
       <div class="step" id="rt0">
-        <div class="stage" id="rStage" style="aspect-ratio:1/1;max-height:66vh;margin-inline:auto"></div>
+        <div class="stage" id="rStage"></div>
         <div class="row" style="margin-top:12px">
           <button class="btn p" id="rPlay">▶ 출항</button>
           <button class="btn sm" id="rSlow">천천히</button>
           <button class="btn sm" id="rBack0">처음으로</button>
+          <button class="btn sm" id="rZoom">⛶ 크게 보기</button>
           <span class="readout" id="rRead">대기 중</span>
         </div>
-        <div class="hint" style="margin-top:9px">※ 탐사정이 <b>허파</b>와 <b>온몸</b>에 닿을 때 무엇이 교환되는지 크게 보여 줍니다.</div>
+        <!-- 한 바퀴를 돌고 나면 원하는 자리로 직접 옮겨 볼 수 있다 -->
+        <div class="row" id="rScrubRow" style="margin-top:10px;display:none">
+          <span class="hint" style="margin:0;white-space:nowrap">🔎 탐사정 옮기기</span>
+          <input type="range" class="scrub" id="rScrub" min="0" max="1000" value="0">
+          <span class="readout" id="rScrubAt" style="white-space:nowrap">대동맥</span>
+        </div>
+        <div class="hint" style="margin-top:9px">※ 탐사정이 <b>허파</b>와 <b>온몸</b>에 닿을 때 무엇이 오가는지 화살표로 보여 줍니다.</div>
       </div>
       <!-- 2 온몸순환 -->
-      <div class="step" id="rt1"><div id="blkBody"></div></div>
+      <div class="step" id="rt1">
+        <div class="stage" id="rMiniB" style="aspect-ratio:32/27;max-height:42vh;margin-inline:auto"></div>
+        <div id="blkBody" style="margin-top:12px"></div>
+      </div>
       <!-- 3 허파순환 -->
-      <div class="step" id="rt2"><div id="blkLung"></div></div>
-      <!-- 4 산소 농도의 변화 -->
+      <div class="step" id="rt2">
+        <div class="stage" id="rMiniL" style="aspect-ratio:316/253;max-height:42vh;margin-inline:auto"></div>
+        <div id="blkLung" style="margin-top:12px"></div>
+      </div>
+      <!-- 4 네 혈관 속 산소 -->
       <div class="step" id="rt3">
-        <div class="stage" id="rChart" style="aspect-ratio:16/9;max-height:44vh"></div>
-        <div id="blkSum"></div>
+        <div class="stage" id="rMiniO" style="aspect-ratio:34/39;max-height:48vh;margin-inline:auto"></div>
+        <div id="blkSum" style="margin-top:12px"></div>
       </div>
 
       <div class="foot">
@@ -555,7 +585,7 @@ main{max-width:1280px;margin:0 auto;padding:20px 16px 80px}
         <button class="btn p" id="rNext">다음 ▶</button>
       </div>
     </div>
-    <div class="grid" style="align-content:start">
+    <div class="grid" style="align-content:start" id="rAside">
       <div class="card info" id="rInfo"></div>
       <div class="card" id="rSide"></div>
     </div>
@@ -5173,41 +5203,47 @@ const BLANKS={
     html:'<p>모세혈관은 동맥과 정맥을 [[이어 주는]] 아주 가는 혈관입니다.</p>'+
          '<p>벽이 [[세포 한 겹]]으로 되어 있어 물질이 드나들 수 있습니다.</p>'+
          '<p>혈액과 조직 세포 사이에서 산소·영양소와 노폐물을 [[교환]]합니다.</p>' },
-  hvc:{ t:'대정맥', bank:['온몸','허파','우심방','좌심방','적은','많은'],
-    html:'<p>대정맥은 [[온몸]]을 돌고 온 혈액이 흐르는 <b>정맥</b>입니다.</p>'+
-         '<p>이 혈액은 [[우심방]]으로 들어옵니다.</p>'+
-         '<p>온몸에 산소를 주고 왔으므로 산소가 [[적은]] 혈액입니다.</p>' },
-  hpa:{ t:'폐동맥', bank:['우심실','좌심실','허파','온몸','동맥','정맥','적은','많은'],
-    html:'<p>폐동맥은 [[우심실]]에서 나가는 혈액이 흐르는 혈관입니다.</p>'+
-         '<p>이 혈액은 [[허파]]로 갑니다.</p>'+
-         '<p>심실에서 나가므로 [[동맥]]이지만, 산소는 [[적은]] 혈액이 흐릅니다.</p>' },
-  hpv:{ t:'폐정맥', bank:['허파','온몸','좌심방','우심방','동맥','정맥','많은','적은'],
-    html:'<p>폐정맥은 [[허파]]에서 산소를 얻은 혈액이 흐르는 혈관입니다.</p>'+
-         '<p>이 혈액은 [[좌심방]]으로 들어옵니다.</p>'+
-         '<p>심방으로 들어오므로 [[정맥]]이지만, 산소가 [[많은]] 혈액이 흐릅니다.</p>' },
-  hao:{ t:'대동맥', bank:['좌심실','우심실','온몸','허파','많은','적은','가장 두꺼운'],
-    html:'<p>대동맥은 [[좌심실]]에서 나가는 혈액이 흐르는 혈관입니다.</p>'+
-         '<p>이 혈액은 [[온몸]]으로 갑니다.</p>'+
-         '<p>산소가 [[많은]] 혈액이 흐르고, 좌심실은 네 방 중 벽이 [[가장 두꺼운]] 곳입니다.</p>' },
+  hvc:{ t:'대정맥', bank:['온몸','허파','동맥','정맥'],
+    html:'<p>대정맥은 [[온몸]]을 돌고 온 혈액이 <b>심장으로 들어오는</b> 혈관입니다.</p>'+
+         '<p>심장으로 <b>들어오는</b> 혈액이 흐르므로 [[정맥]]입니다.</p>' },
+  hpa:{ t:'폐동맥', bank:['허파','온몸','동맥','정맥'],
+    html:'<p>폐동맥은 <b>심장에서 나간</b> 혈액이 [[허파]]로 가는 혈관입니다.</p>'+
+         '<p>심장에서 <b>나가는</b> 혈액이 흐르므로 [[동맥]]입니다.</p>' },
+  hpv:{ t:'폐정맥', bank:['허파','온몸','동맥','정맥'],
+    html:'<p>폐정맥은 [[허파]]를 거친 혈액이 <b>심장으로 들어오는</b> 혈관입니다.</p>'+
+         '<p>심장으로 <b>들어오는</b> 혈액이 흐르므로 [[정맥]]입니다.</p>' },
+  hao:{ t:'대동맥', bank:['온몸','허파','동맥','정맥'],
+    html:'<p>대동맥은 <b>심장에서 나간</b> 혈액이 [[온몸]]으로 가는 혈관입니다.</p>'+
+         '<p>심장에서 <b>나가는</b> 혈액이 흐르므로 [[동맥]]입니다.</p>' },
   /* Stage 4 — 순환 경로 */
   cbody:{ t:'온몸순환', bank:['좌심실','우심실','대동맥','폐동맥','대정맥','폐정맥','우심방','좌심방','산소','이산화 탄소'],
-    html:'<p><b>온몸순환</b>은 심장에서 나간 혈액이 온몸을 돌고 돌아오는 길입니다.</p>'+
-         '<p>[[좌심실]] → [[대동맥]] → 온몸의 모세혈관 → [[대정맥]] → [[우심방]]</p>'+
-         '<p>온몸의 조직 세포에 [[산소]]와 영양소를 주고, 대신 [[이산화 탄소]]와 노폐물을 받아 옵니다.</p>' },
+    html:'<p><b class="kw">온몸순환</b>은 심장에서 나간 혈액이 <b class="kw">온몸</b>을 돌고 돌아오는 길입니다. '+
+         '위 그림의 ①~⑤ 를 보며 채워 보세요.</p>'+
+         '<p class="path">[[좌심실]] → [[대동맥]] → 온몸의 모세혈관 → [[대정맥]] → [[우심방]]</p>'+
+         '<p>온몸의 모세혈관에서는 혈액이 <b class="kw">조직 세포에</b> [[산소]]와 영양소를 <b class="kw">주고</b>, '+
+         '<b class="kw">조직 세포에서</b> [[이산화 탄소]]와 노폐물을 <b class="kw">받아</b> 옵니다.</p>' },
   clung:{ t:'허파순환', bank:['우심실','좌심실','폐동맥','대동맥','폐정맥','대정맥','좌심방','우심방','산소','이산화 탄소'],
-    html:'<p><b>허파순환</b>은 심장에서 나간 혈액이 허파를 돌고 돌아오는 길입니다.</p>'+
-         '<p>[[우심실]] → [[폐동맥]] → 허파의 모세혈관 → [[폐정맥]] → [[좌심방]]</p>'+
-         '<p>허파에서 [[이산화 탄소]]를 내보내고 [[산소]]를 받아 옵니다.</p>' },
-  csum:{ t:'산소 농도는 어디서 바뀔까', bank:['모세혈관','심장','줄어든다','늘어난다','조직 세포','허파'],
-    html:'<p>혈관을 지나는 동안에는 혈액 속 산소가 <b>변하지 않습니다.</b> '+
-         '산소가 바뀌는 곳은 오직 [[모세혈관]] 두 곳입니다.</p>'+
-         '<p><b>온몸의 모세혈관</b>에서는 [[조직 세포]]에 산소를 주기 때문에 산소가 [[줄어든다]].</p>'+
-         '<p><b>허파의 모세혈관</b>에서는 [[허파]]에서 산소를 받기 때문에 산소가 [[늘어난다]].</p>' },
+    html:'<p><b class="kw">허파순환</b>은 심장에서 나간 혈액이 <b class="kw">허파</b>를 돌고 돌아오는 길입니다. '+
+         '위 그림의 ①~⑤ 를 보며 채워 보세요.</p>'+
+         '<p class="path">[[우심실]] → [[폐동맥]] → 허파의 모세혈관 → [[폐정맥]] → [[좌심방]]</p>'+
+         '<p>허파의 모세혈관에서는 혈액이 <b class="kw">허파에</b> [[이산화 탄소]]를 <b class="kw">주고</b>, '+
+         '<b class="kw">허파에서</b> [[산소]]를 <b class="kw">받아</b> 옵니다.</p>' },
+  csum:{ t:'네 혈관 속 산소', bank:['적은','많은','적은','많은','허파','온몸'],
+    html:'<p>혈액은 <b class="kw">허파</b>를 지나면서 산소를 채우고, <b class="kw">온몸</b>을 지나면서 '+
+         '조직 세포에 산소를 건네줍니다. 그래서 네 혈관을 지날 때 산소량이 서로 다릅니다.</p>'+
+         '<p><b class="o2lo">폐동맥</b> — 아직 허파를 지나기 <b>전</b>이라, 산소가 [[적은]] 혈액</p>'+
+         '<p><b class="o2hi">폐정맥</b> — 허파에서 산소를 받은 <b>뒤</b>라, 산소가 [[많은]] 혈액</p>'+
+         '<p><b class="o2hi">대동맥</b> — 온몸으로 산소를 실어 나가는 길이라, 산소가 [[많은]] 혈액</p>'+
+         '<p><b class="o2lo">대정맥</b> — 온몸에 산소를 주고 온 <b>뒤</b>라, 산소가 [[적은]] 혈액</p>'+
+         '<p>그러니 <b class="kw">동맥이라고 산소가 많은 것이 아닙니다.</b> '+
+         '방금 [[허파]]를 지나왔는지가 산소량을 정합니다.</p>' },
   hroom:{ t:'심장의 방', swap:[[0,1]],   // '2심방 2심실' 순서가 바뀌어도 정답
-    bank:['2심방','2심실','1심방','들어오는','나가는','좌심실','우심방'],
+    bank:['2심방','2심실','1심방','들어오는','나가는','좌심실','우심방','대정맥','폐동맥','폐정맥','대동맥'],
     html:'<p>심장은 [[2심방]] [[2심실]], 모두 네 개의 방으로 되어 있습니다.</p>'+
-         '<p>심방은 혈액이 [[들어오는]] 곳입니다.</p>'+
-         '<p>심실은 혈액이 [[나가는]] 곳입니다.</p>'+
+         '<p><b>심방</b>은 혈액이 [[들어오는]] 곳이라 <b>정맥</b>과 이어집니다 — '+
+         '우심방은 [[대정맥]]과, 좌심방은 [[폐정맥]]과 이어집니다.</p>'+
+         '<p><b>심실</b>은 혈액이 [[나가는]] 곳이라 <b>동맥</b>과 이어집니다 — '+
+         '우심실은 [[폐동맥]]과, 좌심실은 [[대동맥]]과 이어집니다.</p>'+
          '<p>네 방 중 벽이 가장 두꺼운 곳은 [[좌심실]]입니다.</p>' },
   hvalve:{ t:'판막', bank:['한 방향','양쪽','동맥','정맥','네 곳','두 곳','거꾸로','빠르게'],
     html:'<p>판막은 혈액이 [[한 방향]]으로만 흐르게 합니다.</p>'+
@@ -7014,22 +7050,22 @@ const HGEO={
   slR:{cx:190,cy:352,hw:27}, slL:{cx:534,cy:352,hw:28}
 };
 const HPARTS={
-  ra:{n:'우심방',c:HC.blue,d:'온몸을 돌고 <b>대정맥</b>을 통해 들어온 혈액을 받는 방입니다. 산소가 적은 혈액이 모입니다.',
-      p:['받은 혈액을 아래 <b>우심실</b>로 보냅니다']},
-  la:{n:'좌심방',c:HC.red,d:'허파를 거쳐 <b>폐정맥</b>을 통해 들어온 혈액을 받는 방입니다. 산소가 많은 혈액이 모입니다.',
-      p:['받은 혈액을 아래 <b>좌심실</b>로 보냅니다']},
-  rv:{n:'우심실',c:HC.blue,d:'우심방에서 받은 혈액을 <b>폐동맥</b>으로 내보냅니다. 허파순환이 시작되는 곳입니다.',
-      p:['심방보다 벽이 <b>두껍습니다</b>']},
-  lv:{n:'좌심실',c:HC.red,d:'좌심방에서 받은 혈액을 <b>대동맥</b>으로 내보냅니다. 온몸순환이 시작되는 곳입니다.',
-      p:['혈액을 <b>온몸까지</b> 보내야 해서 벽이 매우 두껍습니다']},
-  vc:{n:'대정맥',c:HC.blue,d:'온몸을 돌고 온 혈액이 <b>우심방으로 들어오는</b> 정맥입니다.',
-      p:['정맥 = 심방으로 <b>들어오는</b> 혈액이 흐르는 혈관']},
-  pa:{n:'폐동맥',c:HC.blue,d:'<b>우심실에서 나가는</b> 혈액이 허파로 가는 동맥입니다.',
-      p:['동맥 = 심실에서 <b>나가는</b> 혈액이 흐르는 혈관','동맥이지만 산소가 적은 혈액이 흐릅니다']},
-  pv:{n:'폐정맥',c:HC.red,d:'허파에서 산소를 얻은 혈액이 <b>좌심방으로 들어오는</b> 정맥입니다.',
-      p:['정맥 = 심방으로 <b>들어오는</b> 혈액이 흐르는 혈관','정맥이지만 산소가 많은 혈액이 흐릅니다']},
-  ao:{n:'대동맥',c:HC.red,d:'<b>좌심실에서 나가는</b> 혈액이 온몸으로 가는 동맥입니다.',
-      p:['동맥 = 심실에서 <b>나가는</b> 혈액이 흐르는 혈관']},
+  ra:{n:'우심방',c:HC.blue,d:'<b>대정맥</b>과 이어져 있는 방입니다. 온몸을 돌고 온 혈액이 여기로 들어옵니다.',
+      p:['혈액이 <b>들어오는</b> 방 → 정맥과 이어진다','받은 혈액을 아래 <b>우심실</b>로 보냅니다']},
+  la:{n:'좌심방',c:HC.red,d:'<b>폐정맥</b>과 이어져 있는 방입니다. 허파를 거친 혈액이 여기로 들어옵니다.',
+      p:['혈액이 <b>들어오는</b> 방 → 정맥과 이어진다','받은 혈액을 아래 <b>좌심실</b>로 보냅니다']},
+  rv:{n:'우심실',c:HC.blue,d:'<b>폐동맥</b>과 이어져 있는 방입니다. 우심방에서 받은 혈액을 허파로 내보냅니다.',
+      p:['혈액이 <b>나가는</b> 방 → 동맥과 이어진다','심방보다 벽이 <b>두껍습니다</b>']},
+  lv:{n:'좌심실',c:HC.red,d:'<b>대동맥</b>과 이어져 있는 방입니다. 좌심방에서 받은 혈액을 온몸으로 내보냅니다.',
+      p:['혈액이 <b>나가는</b> 방 → 동맥과 이어진다','혈액을 <b>온몸까지</b> 보내야 해서 네 방 중 벽이 가장 두껍습니다']},
+  vc:{n:'대정맥',c:HC.blue,d:'온몸을 돌고 온 혈액이 <b>심장으로 들어오는</b> 혈관입니다.',
+      p:['심장으로 <b>들어오는</b> 혈액이 흐른다 → 정맥']},
+  pa:{n:'폐동맥',c:HC.blue,d:'<b>심장에서 나간</b> 혈액이 허파로 가는 혈관입니다.',
+      p:['심장에서 <b>나가는</b> 혈액이 흐른다 → 동맥']},
+  pv:{n:'폐정맥',c:HC.red,d:'허파를 거친 혈액이 <b>심장으로 들어오는</b> 혈관입니다.',
+      p:['심장으로 <b>들어오는</b> 혈액이 흐른다 → 정맥']},
+  ao:{n:'대동맥',c:HC.red,d:'<b>심장에서 나간</b> 혈액이 온몸으로 가는 혈관입니다.',
+      p:['심장에서 <b>나가는</b> 혈액이 흐른다 → 동맥']},
   avR:{n:'심방과 심실 사이의 판막',c:HC.muscleD,d:'우심방과 우심실 사이에 있습니다. <b>심실이 수축할 때 닫혀서</b> 혈액이 심방으로 거꾸로 흐르지 못하게 합니다.',
       p:['심방이 수축할 때 → <b>열림</b>','심실이 수축할 때 → <b>닫힘</b>']},
   avL:{n:'심방과 심실 사이의 판막',c:HC.muscleD,d:'좌심방과 좌심실 사이에 있습니다. <b>심실이 수축할 때 닫혀서</b> 혈액이 심방으로 거꾸로 흐르지 못하게 합니다.',
@@ -9551,12 +9587,12 @@ var GameC=(function(){
    (원본 그림을 베끼지 않고 좌표를 직접 잡아 그렸다)
 ================================================================== */
 var Circ=(function(){
-  const STEPS=[{n:'한 바퀴 따라가기'},{n:'온몸순환'},{n:'허파순환'},{n:'산소 농도의 변화'}];
+  const STEPS=[{n:'한 바퀴 따라가기'},{n:'온몸순환'},{n:'허파순환'},{n:'네 혈관 속 산소'}];
   const RTIP=[
     '탐사정에 오르시오. 당신의 피를 따라 <b>한 바퀴</b> 돌 것이오. 어디서 무엇이 오가는지 눈을 떼지 마시오.',
-    '방금 돈 길의 <b>절반</b>이오 — 심장에서 <b>온몸</b>까지 갔다 오는 길. 빈칸을 채워 정리해 보시오.',
-    '나머지 절반은 <b>허파</b>로 갔다 오는 길이오. 여기서 숨쉬기와 이어지지.',
-    '마지막이오. <b>탐사정이 실은 산소</b>가 한 바퀴 도는 동안 어떻게 늘고 주는지 보시오.'
+    '방금 돈 길의 <b>절반</b>이오 — 심장에서 <b>온몸</b>까지 갔다 오는 길. 위 그림의 <b>①~⑤</b> 를 보며 빈칸을 채우시오.',
+    '나머지 절반은 <b>허파</b>로 갔다 오는 길이오. 마찬가지로 <b>①~⑤</b> 를 보며 채우시오.',
+    '마지막이오. <b>네 혈관</b>을 지날 때 혈액에 산소가 얼마나 실려 있는지 확인하시오.'
   ];
   /* ── 화면 좌표 (900×900 정사각형) ─────────────────────────────
      교과서 그림과 같은 배치: 몸 실루엣 안에 위쪽 허파, 가운데 심장, 아래쪽 온몸 조직. */
@@ -9579,17 +9615,19 @@ var Circ=(function(){
   };
   const SEG=[
     {k:'ao', n:'대동맥',        o2:1, t:'좌심실에서 나온 <b>산소가 많은</b> 혈액이 대동맥을 지나 온몸으로 갑니다.'},
-    {k:'bc', n:'온몸의 모세혈관', o2:1, ex:'body', t:'조직 세포에 <b>산소</b>를 주고 <b>이산화 탄소</b>를 받습니다. 여기서 붉은 피가 푸르게 바뀝니다.'},
+    {k:'bc', n:'온몸의 모세혈관', o2:1, ex:'body', t:'혈액이 <b>조직 세포에</b> 산소를 <b>주고</b>, <b>조직 세포에서</b> 이산화 탄소를 <b>받습니다.</b> 여기서 붉은 피가 푸르게 바뀝니다.'},
     {k:'vc', n:'대정맥',        o2:0, t:'<b>산소가 적어진</b> 혈액이 대정맥을 지나 우심방으로 돌아옵니다.'},
     {k:'ra', n:'우심방 → 우심실', o2:0, t:'우심방으로 들어와 우심실로 내려갑니다. <b>온몸순환이 끝났습니다.</b>'},
-    {k:'pa', n:'폐동맥',        o2:0, t:'우심실에서 나와 폐동맥을 지나 허파로 갑니다. <b>동맥인데 산소는 적습니다.</b>'},
-    {k:'pc', n:'허파의 모세혈관', o2:0, ex:'lung', t:'<b>이산화 탄소</b>를 허파로 버리고 <b>산소</b>를 받습니다. 여기서 푸른 피가 붉게 바뀝니다.'},
-    {k:'pv', n:'폐정맥',        o2:1, t:'<b>산소가 많아진</b> 혈액이 폐정맥을 지나 좌심방으로 돌아옵니다. <b>정맥인데 산소가 많습니다.</b>'},
+    {k:'pa', n:'폐동맥',        o2:0, t:'우심실에서 나와 폐동맥을 지나 허파로 갑니다. <b>아직 허파를 지나기 전이라, 동맥인데 산소가 적습니다.</b>'},
+    {k:'pc', n:'허파의 모세혈관', o2:0, ex:'lung', t:'혈액이 <b>허파에</b> 이산화 탄소를 <b>주고</b>, <b>허파에서</b> 산소를 <b>받습니다.</b> 여기서 푸른 피가 붉게 바뀝니다.'},
+    {k:'pv', n:'폐정맥',        o2:1, t:'허파에서 산소를 받은 혈액이 폐정맥을 지나 좌심방으로 돌아옵니다. <b>정맥인데 산소가 많습니다.</b>'},
     {k:'la', n:'좌심방 → 좌심실', o2:1, t:'좌심방으로 들어와 좌심실로 내려갑니다. <b>허파순환이 끝났습니다.</b>'}
   ];
   const RED='#e0554a', BLUE='#3f7ad0', RED_D='#b83028', BLUE_D='#2a5aa8';
   let cv,ctx,raf=null,live=false,seg=0,u=0,slow=false,started=false,laps=0,ex=0;
-  let built=false, step=0, blkB=null, blkL=null, blkS=null, chartT=0;
+  let built=false, step=0, blkB=null, blkL=null, blkS=null;
+  let FOCUS=null;                       // 'body' · 'lung' · 'o2' 일 때 한쪽만 보여 준다
+  let mB=null, mL=null, mO=null, mt=0;  // 2·3·4 단계의 작은 그림
   const done=[false,false,false,false];
 
   function saveProg(){ try{ Store.setProg('circ',{done:done.slice(), laps:laps}); }catch(e){} }
@@ -9609,18 +9647,22 @@ var Circ=(function(){
       '푸른 길 = 산소가 <b>적은</b> 혈액<br>색이 바뀌는 곳은 언제나 <b>모세혈관</b>입니다.</div>'+
       '<div class="hint" style="margin-top:8px">한 바퀴를 끝까지 돌면 다음 단계가 열립니다.</div>'; },
     ()=>{ $('#rSide').innerHTML='<h3 style="font-size:17px">온몸순환</h3>'+
-      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">심장 → 온몸 → 심장. '+
-      '이 길에서 우리 몸의 세포가 <b>산소</b>를 받습니다.</p>'+
-      '<div class="note" style="font-size:14.5px">시작은 <b>좌심실</b>, 끝은 <b>우심방</b>입니다.</div>'; },
+      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">심장 → <b class="kw">온몸</b> → 심장. '+
+      '이 길에서 우리 몸의 조직 세포가 <b class="kw">산소</b>를 받습니다.</p>'+
+      '<div class="note" style="font-size:14.5px">시작은 <b class="kw">좌심실</b>, 끝은 <b class="kw">우심방</b>입니다.<br>'+
+      '위 그림에서 <b>이 길만</b> 색이 남아 있습니다.</div>'; },
     ()=>{ $('#rSide').innerHTML='<h3 style="font-size:17px">허파순환</h3>'+
-      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">심장 → 허파 → 심장. '+
-      '이 길에서 혈액이 <b>산소를 다시 채웁니다.</b></p>'+
-      '<div class="note" style="font-size:14.5px">시작은 <b>우심실</b>, 끝은 <b>좌심방</b>입니다.</div>'; },
-    ()=>{ $('#rSide').innerHTML='<h3 style="font-size:17px">산소는 어디서 변할까</h3>'+
-      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">혈관을 지나는 동안에는 산소가 <b>변하지 않습니다.</b> '+
-      '오직 <b>모세혈관 두 곳</b>에서만 바뀝니다.</p>'+
-      '<div class="note" style="font-size:14.5px"><b>온몸의 모세혈관</b> — 세포에 산소를 주고 <b>뚝 떨어진다</b><br>'+
-      '<b>허파의 모세혈관</b> — 산소를 받아 <b>쭉 올라간다</b></div>'; }
+      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">심장 → <b class="kw">허파</b> → 심장. '+
+      '이 길에서 혈액이 <b class="kw">산소를 다시 채웁니다.</b></p>'+
+      '<div class="note" style="font-size:14.5px">시작은 <b class="kw">우심실</b>, 끝은 <b class="kw">좌심방</b>입니다.<br>'+
+      '주고받는 <b>주체는 늘 혈액</b>입니다 — 혈액이 허파에 주고, 허파에서 받습니다.</div>'; },
+    ()=>{ $('#rSide').innerHTML='<h3 style="font-size:17px">동맥 = 산소가 많다? 아니다</h3>'+
+      '<p style="font-size:15px;color:#cfdcee;margin:8px 0 10px">산소량을 정하는 것은 혈관의 이름이 아니라, '+
+      '그 혈액이 <b class="kw">방금 어디를 지나왔는지</b>입니다.</p>'+
+      '<div class="note" style="font-size:14.5px">'+
+      '<b class="o2lo">폐동맥</b> 산소 적음 &nbsp;·&nbsp; <b class="o2hi">폐정맥</b> 산소 많음<br>'+
+      '<b class="o2hi">대동맥</b> 산소 많음 &nbsp;·&nbsp; <b class="o2lo">대정맥</b> 산소 적음</div>'+
+      '<div class="hint" style="margin-top:8px">허파를 지난 직후 = 많음 / 온몸을 지난 직후 = 적음</div>'; }
   ];
   function unlocked(i){ return i===0 || done[i-1]; }
   function paint(){
@@ -9636,9 +9678,18 @@ var Circ=(function(){
     $('#rNext').disabled=!done[step];
     $('#rNext').textContent=!done[step]?'\u{1F512} 이 단계를 끝내면 열립니다':(fin?'진단 결과 보기 ▶':'다음 ▶');
     $$('#rt0 .row button, #rt0 .readout').forEach(e=>e.style.display=step===0?'':'none');
+    /* 1단계는 그림이 주인공 — 옆 칸을 접고 화면 전체를 쓴다 */
+    $('#rGrid').classList.toggle('solo', step===0);
+    /* 2~4단계에서는 위 그림이 무엇을 보여 주는지 적어 둔다 (1단계는 매 프레임 갱신) */
+    if(step>0) $('#rInfo').innerHTML=[
+      '','<h4>지금 보는 길 — 온몸순환</h4><p>심장에서 나가 <b>온몸</b>을 돌고 돌아오는 길입니다. '+
+        '색이 남아 있는 쪽만 따라가며 <b>①~⑤</b> 를 확인하세요.</p>',
+      '<h4>지금 보는 길 — 허파순환</h4><p>심장에서 나가 <b>허파</b>를 돌고 돌아오는 길입니다. '+
+        '모세혈관에서 <b>혈액이</b> 허파에 이산화 탄소를 <b>주고</b>, 허파에서 산소를 <b>받습니다.</b></p>',
+      '<h4>네 혈관 속 산소</h4><p>그림의 딱지를 보세요. 산소가 많고 적은 것은 '+
+        '<b>동맥·정맥이라는 이름</b>이 아니라 <b>방금 지나온 곳</b>이 정합니다.</p>'][step];
     tip('rTipPor','rTip',RTIP[step]);
     SIDE[step]();
-    if(step===3) drawChart();
   }
   function markDone(i){ if(done[i])return; done[i]=true; saveProg();
     $('#rMsg').textContent='✔ '+STEPS[i].n+' 완료'; $('#rMsg').className='msg ok'; paint(); }
@@ -9777,6 +9828,7 @@ var Circ=(function(){
     ctx.strokeStyle='#ffe9c9'; ctx.lineWidth=5; ctx.lineCap='round';
     [[cx-62,MID],[cx+62,MID]].forEach(([x,y])=>{
       ctx.beginPath(); ctx.moveTo(x-19,y); ctx.quadraticCurveTo(x,y+15,x+19,y); ctx.stroke(); });
+    if(FOCUS==='body'||FOCUS==='lung') return;   // 이름표는 ①~⑤ 뱃지가 대신한다
     label('우심방',cx-62,cy-72,'#dce9ff');  label('좌심방',cx+62,cy-76,'#ffe1dd');
     label('우심실',cx-58,cy+30,'#dce9ff');  label('좌심실',cx+62,cy+50,'#ffe1dd');
   }
@@ -9788,6 +9840,10 @@ var Circ=(function(){
     ctx.fill();
     ctx.fillStyle=col||'#e6edf7'; ctx.fillText(t,x,y+3); ctx.textAlign='left';
   }
+  /* FOCUS : null 전체 · 'body' 온몸순환만 · 'lung' 허파순환만 · 'o2' 네 혈관 산소 표시 */
+  const GRAY='#ccd3dd', GRAY_D='#a9b2bf', PALE='#eceff4';
+  function offA(k){ return FOCUS==='body' ? ['pa','pc','pv'].indexOf(k)>=0
+                  : FOCUS==='lung' ? ['ao','bc','vc'].indexOf(k)>=0 : false; }
   function scene(){
     ctx.fillStyle='#f2f5fa'; ctx.fillRect(0,0,W,H);
     /* 몸 실루엣 */
@@ -9807,12 +9863,13 @@ var Circ=(function(){
     ctx.beginPath(); ctx.moveTo(450,196); ctx.quadraticCurveTo(410,206,382,240);
     ctx.moveTo(450,196); ctx.quadraticCurveTo(490,206,518,240); ctx.stroke();
     /* ── 허파 두 쪽 ── */
+    const lungOff = FOCUS==='body';
     [-1,1].forEach(sx=>{
-      ctx.fillStyle='#f7c8c6'; ctx.strokeStyle='#dd9a99'; ctx.lineWidth=3.2;
+      ctx.fillStyle=lungOff?PALE:'#f7c8c6'; ctx.strokeStyle=lungOff?GRAY:'#dd9a99'; ctx.lineWidth=3.2;
       lobe(sx); ctx.fill(); ctx.stroke();
       ctx.save(); lobe(sx); ctx.clip();
       /* 허파꽈리 느낌 — 옅은 방울 무늬 */
-      ctx.fillStyle='rgba(228,160,160,.35)';
+      ctx.fillStyle=lungOff?'rgba(180,190,205,.28)':'rgba(228,160,160,.35)';
       for(let r=0;r<7;r++) for(let c=0;c<5;c++){
         const x=450+sx*(34+c*28)+(r%2?sx*14:0), y=168+r*30;
         ctx.beginPath(); ctx.arc(x,y,10,0,7); ctx.fill();
@@ -9821,49 +9878,105 @@ var Circ=(function(){
     });
 
     /* ── 조직 세포 — 그물 위아래로 둘러싼다 ── */
+    const tisOff = FOCUS==='lung';
     [[736,1],[856,0],[886,1]].forEach(([y,off])=>{
       for(let c=0;c<12;c++){
         const x=282+c*30+(off?15:0);
-        ctx.fillStyle='#f7e2c0'; ctx.strokeStyle='#e0c191'; ctx.lineWidth=2;
+        ctx.fillStyle=tisOff?PALE:'#f7e2c0'; ctx.strokeStyle=tisOff?GRAY:'#e0c191'; ctx.lineWidth=2;
         ctx.beginPath(); ctx.ellipse(x,y,17,13.5,0,0,7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle='#c9a6d8'; ctx.beginPath(); ctx.arc(x,y,4.4,0,7); ctx.fill();
+        ctx.fillStyle=tisOff?'#cfd5de':'#c9a6d8'; ctx.beginPath(); ctx.arc(x,y,4.4,0,7); ctx.fill();
       }
     });
 
     /* ── 모세혈관 그물 ── */
-    net(P.pc, BLUE, RED, 17, 54, 0.62);       // 허파 — 가운데가 잘록한 두 쪽
-    net(P.bc, RED,  BLUE, 91, 27, 0);         // 온몸
+    if(offA('pc')) net(P.pc, GRAY, GRAY, 17, 54, 0.62);
+    else           net(P.pc, BLUE, RED, 17, 54, 0.62);   // 허파 — 가운데가 잘록한 두 쪽
+    if(offA('bc')) net(P.bc, GRAY, GRAY, 91, 27, 0);
+    else           net(P.bc, RED,  BLUE, 91, 27, 0);     // 온몸
 
     /* ── 큰 혈관 ── */
-    vessel(P.ao,RED,RED_D,20);  vessel(P.vc,BLUE,BLUE_D,20);
-    vessel(P.pa,BLUE,BLUE_D,17); vessel(P.pv,RED,RED_D,17);
+    vessel(P.ao, offA('ao')?GRAY:RED,  offA('ao')?GRAY_D:RED_D, 20);
+    vessel(P.vc, offA('vc')?GRAY:BLUE, offA('vc')?GRAY_D:BLUE_D,20);
+    vessel(P.pa, offA('pa')?GRAY:BLUE, offA('pa')?GRAY_D:BLUE_D,17);
+    vessel(P.pv, offA('pv')?GRAY:RED,  offA('pv')?GRAY_D:RED_D, 17);
     heart();
 
     /* ── 이름표 ── */
+    if(FOCUS==='body' || FOCUS==='lung'){ routeBadges(FOCUS); return; }
     label('폐동맥',256,352,'#dce9ff'); label('폐정맥',648,352,'#ffd9d4');
     label('대정맥',196,660,'#dce9ff'); label('대동맥',712,664,'#ffd9d4');
     label('허파',352,306,'#ffd3d0');
     label('허파의 모세혈관',450,352,'#e9c9f7');
     label('온몸의 모세혈관',450,706,'#e9c9f7');
     label('조직 세포',652,832,'#f3ddb2',13);
+    if(FOCUS==='o2') o2Chips();
+  }
+  /* 순환 한쪽만 볼 때 — 길을 따라 ①~⑤ 를 붙여 준다. 빈칸을 보며 채우라고 만든 것 */
+  const RT={
+    body:[['좌심실',512,562],['대동맥',694,664],['온몸의 모세혈관',450,858],
+          ['대정맥',196,650],['우심방',386,444]],
+    lung:[['우심실',392,548],['폐동맥',282,378],['허파의 모세혈관',450,340],
+          ['폐정맥',618,378],['좌심방',514,440]]
+  };
+  const NUM=['①','②','③','④','⑤'];
+  function routeBadges(which){
+    RT[which].forEach(([t,x,y],i)=>{
+      ctx.beginPath(); ctx.arc(x,y-26,17,0,7);
+      ctx.fillStyle='#ffd27a'; ctx.fill();
+      ctx.strokeStyle='#8a6416'; ctx.lineWidth=2.5; ctx.stroke();
+      ctx.fillStyle='#5b4207'; ctx.font='800 19px sans-serif'; ctx.textAlign='center';
+      ctx.fillText(NUM[i],x,y-19); ctx.textAlign='left';
+      label(t,x,y+16,'#fff4d8',14.5);
+    });
+  }
+  /* 네 혈관에 산소량 딱지 */
+  function o2Chips(){
+    [['폐동맥','산소 적음',256,392,BLUE],['폐정맥','산소 많음',648,392,RED],
+     ['대정맥','산소 적음',196,700,BLUE],['대동맥','산소 많음',712,704,RED]].forEach(([n,t,x,y,c])=>{
+      ctx.font='800 15px sans-serif'; ctx.textAlign='center';
+      const w=ctx.measureText(t).width+26;
+      ctx.fillStyle=c; ctx.strokeStyle='#fff'; ctx.lineWidth=2.5;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x-w/2,y-15,w,30,9) : ctx.rect(x-w/2,y-15,w,30);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.fillText(t,x,y+5); ctx.textAlign='left';
+    });
   }
   /* ── 물질 교환 ──
      '허파가 산소를 받는다'로 잘못 읽히지 않도록, 누가 주고 누가 받는지를
      화살표 하나에 못박는다. 그림 위에도 같은 방향으로 분자가 움직인다. */
-  function gasFlow(x,y,dir,ph,txt,col,near,far){
-    /* dir : -1 이면 혈액 밖으로(위), +1 이면 혈액 밖으로(아래).
-       ph 는 0→1 로 흐르는 진행도. 되돌아오는 쪽은 ph 를 뒤집어 넣는다. */
+  function gasFlow(x,y,dir,ph,txt,col,near,far,out){
+    /* dir : -1 이면 혈관 바깥이 위쪽, +1 이면 아래쪽.
+       out=true  혈액 → 바깥 (가까운 곳에서 먼 곳으로)
+       out=false 바깥 → 혈액 (먼 곳에서 가까운 곳으로)
+       ph 는 0→1 진행도. 화살촉은 늘 '실제 가는 방향' 끝에 찍는다. */
     const A=y+dir*near, B=y+dir*far;
+    const S=out?A:B, E=out?B:A;
     ctx.globalAlpha=.32; ctx.strokeStyle=col; ctx.lineWidth=3.5; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(x,A); ctx.lineTo(x,B); ctx.stroke();
-    ctx.fillStyle=col; const sg=Math.sign(B-A);
-    ctx.beginPath(); ctx.moveTo(x,B+sg*11); ctx.lineTo(x-8,B); ctx.lineTo(x+8,B); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x,S); ctx.lineTo(x,E); ctx.stroke();
+    ctx.fillStyle=col; const sg=Math.sign(E-S);
+    ctx.beginPath(); ctx.moveTo(x,E+sg*11); ctx.lineTo(x-8,E); ctx.lineTo(x+8,E); ctx.closePath(); ctx.fill();
     ctx.globalAlpha=1;
-    const py=A+(B-A)*ph;
+    const py=S+(E-S)*ph;
     ctx.fillStyle=col; ctx.beginPath(); ctx.arc(x,py,13,0,7); ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=2; ctx.stroke();
     ctx.fillStyle='#fff'; ctx.font='800 12px sans-serif'; ctx.textAlign='center';
     ctx.fillText(txt,x,py+4); ctx.textAlign='left';
+  }
+  /* 탐사정이 없어도 두 모세혈관의 교환 방향은 늘 보이게 — 화살표 두 개만 조용히 */
+  function idleExchange(k,skip){
+    [['lung',-1,52,114],['body',1,34,80]].forEach(([kind,dir,near,far])=>{
+      if(kind===skip) return;
+      const lung=kind==='lung', pts=P[lung?'pc':'bc'];
+      const outT=lung?'CO₂':'O₂', outC=lung?'#5b86d6':'#e0554a';
+      const inT =lung?'O₂':'CO₂', inC =lung?'#e0554a':'#5b86d6';
+      ctx.globalAlpha=.72;
+      [[0.24,1],[0.76,0]].forEach(([uu,out],i)=>{
+        const q=at(pts,uu), ph=((k*0.42+i*0.5)%1);
+        gasFlow(q.x,q.y,dir, ph, out?outT:inT, out?outC:inC, near, far, out);
+      });
+      ctx.globalAlpha=1;
+    });
   }
   function drawExchange(kind,k){
     const lung = kind==='lung';
@@ -9878,7 +9991,7 @@ var Circ=(function(){
     ctx.roundRect ? ctx.roundRect(bx-PW/2,by-PH2/2,PW,PH2,14) : ctx.rect(bx-PW/2,by-PH2/2,PW,PH2);
     ctx.fill(); ctx.stroke();
     ctx.textAlign='center'; ctx.fillStyle='#5b4a6b'; ctx.font='800 15px sans-serif';
-    ctx.fillText(who+'에서 일어나는 물질 교환', bx, by-30);
+    ctx.fillText('혈액과 '+who+' 사이의 물질 교환', bx, by-30);
     rows.forEach((r,i)=>{
       const y=by-2+i*30, wob=Math.sin(k*4+i*2)*3;
       ctx.fillStyle=r[3]; ctx.beginPath(); ctx.arc(bx-142,y-4,13,0,7); ctx.fill();
@@ -9899,10 +10012,10 @@ var Circ=(function(){
     const near=lung?52:34, far=lung?114:80;
     const outT=rows[0][0], outC=rows[0][3], inT=rows[1][0], inC=rows[1][3];
     /* 허파는 가운데(기관 자리)를 비우고 좌우 두 쪽에 두 개씩 */
-    const spots = lung ? [0.16,0.32,0.68,0.84] : [0.22,0.42,0.62,0.82];
+    const spots = lung ? [0.11,0.35,0.65,0.89] : [0.18,0.40,0.60,0.82];
     spots.forEach((u,i)=>{
       const q=at(pts,u), ph=((k*0.5+i*0.25)%1), out=(i%2===0);
-      gasFlow(q.x, q.y, dir, out?ph:1-ph, out?outT:inT, out?outC:inC, near, far);
+      gasFlow(q.x, q.y, dir, ph, out?outT:inT, out?outC:inC, near, far, out);
     });
   }
   function subDraw(x,y,a,o2){
@@ -9922,103 +10035,144 @@ var Circ=(function(){
     ctx.setTransform(sc,0,0,sc,0,0);
   }
   let last=0;
-  function loop(ts){
-    raf=requestAnimationFrame(loop);
-    if(!$('#rStage').offsetParent){ last=ts; return; }
+
+  /* ---------- 경로 전체를 하나의 0~1 로 다루기 (스크롤 이동용) ---------- */
+  const SLEN=SEG.map(S=>plen(P[S.k]));
+  const STOT=SLEN.reduce((x,y)=>x+y,0);
+  function circT(){ let d=0; for(let i=0;i<seg;i++) d+=SLEN[i]; return (d+SLEN[seg]*u)/STOT; }
+  function setCircT(t){
+    let d=clamp(t,0,0.9999)*STOT;
+    for(let i=0;i<SEG.length;i++){
+      if(d<SLEN[i]||i===SEG.length-1){ seg=i; u=clamp(d/SLEN[i],0,1); return; }
+      d-=SLEN[i];
+    }
+  }
+
+  /* ---------- 1단계 : 큰 그림 한 바퀴 ---------- */
+  function mainFrame(dt){
     const rr0=$('#rStage').getBoundingClientRect();
     if(rr0.width && Math.abs(cv.width-Math.round(rr0.width*Math.min(devicePixelRatio||1,2)))>2) resize();
-    let dt=Math.min((ts-last)/1000,.05); last=ts; ex+=dt;
+    FOCUS=null;
     scene();
-    const S=SEG[seg], pts=P[S.k];
+    const S=SEG[seg];
     if(live){
       const spd=(slow?0.10:0.24)*(S.ex?0.42:1);
       u+=spd*dt;
       if(u>=1){ u=0; seg=(seg+1)%SEG.length;
         if(seg===0){ laps++; saveProg();
           if(!done[0]){ markDone(0); live=false; $('#rPlay').textContent='▶ 다시 출항';
-            $('#rRead').textContent='한 바퀴 완주! 다음 단계가 열렸습니다'; } } }
+            $('#rRead').textContent='한 바퀴 완주! 이제 원하는 자리로 옮겨 볼 수 있어요'; } } }
     }
     const cur=SEG[seg], pp=at(P[cur.k],u);
     /* 지금 지나는 구간 강조 */
-    ctx.strokeStyle=cur.o2?'rgba(255,255,255,.85)':'rgba(255,255,255,.85)';
+    ctx.strokeStyle='rgba(255,255,255,.85)';
     ctx.lineWidth=4; ctx.setLineDash([10,10]); ctx.lineDashOffset=-ex*40;
     smooth(P[cur.k]); ctx.stroke(); ctx.setLineDash([]);
+    idleExchange(ex, cur.ex);
     if(cur.ex) drawExchange(cur.ex, ex);
     subDraw(pp.x,pp.y,pp.a,cur.o2);
     /* 위치·산소 표시 */
     ctx.fillStyle='rgba(255,255,255,.95)'; ctx.strokeStyle='#c3cede'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16,16,306,60,12) : ctx.rect(16,16,306,60);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16,16,330,66,12) : ctx.rect(16,16,330,66);
     ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#2b3a52'; ctx.font='800 21px sans-serif'; ctx.fillText(cur.n, 30, 44);
-    ctx.fillStyle=cur.o2?RED:BLUE; ctx.font='800 15px sans-serif';
-    ctx.fillText(cur.o2?'● 산소가 많은 혈액':'● 산소가 적은 혈액', 30, 66);
+    ctx.fillStyle='#2b3a52'; ctx.font='800 23px sans-serif'; ctx.fillText(cur.n, 32, 48);
+    ctx.fillStyle=cur.o2?RED:BLUE; ctx.font='800 16px sans-serif';
+    ctx.fillText(cur.o2?'● 산소가 많은 혈액':'● 산소가 적은 혈액', 32, 72);
+    /* 한 바퀴를 돌았으면 직접 옮길 수 있게 */
+    const sc=$('#rScrubRow'); if(sc) sc.style.display = done[0] ? 'flex' : 'none';
+    const sl=$('#rScrub');
+    if(sl && !sl.dataset.grab) sl.value=Math.round(circT()*1000);
+    const sa=$('#rScrubAt'); if(sa) sa.textContent=cur.n;
     $('#rRead').textContent = live ? (cur.n+' 지나는 중  ·  완주 '+laps+'바퀴')
       : (started?'멈춤 — ▶ 를 누르면 이어서':'대기 중');
     $('#rInfo').innerHTML='<h4>'+cur.n+'</h4><p>'+cur.t+'</p>';
   }
 
-  /* ---------- 4단계 : 산소 농도 변화 ---------- */
-  const ROUTE=[['좌심실',100],['대동맥',100],['온몸 모세혈관',100],['대정맥',40],['우심방',40],
-               ['우심실',40],['폐동맥',40],['허파 모세혈관',40],['폐정맥',100],['좌심방',100],['좌심실',100]];
-  function drawChart(){
-    const host=$('#rChart'); if(!host) return;
-    host.innerHTML='<canvas id="cChart" style="position:absolute;inset:0;width:100%;height:100%"></canvas>';
-    const c=$('#cChart'), g=c.getContext('2d');
-    const CW=900, r=host.getBoundingClientRect();
-    if(!r.width) return;
-    const CH=Math.round(CW*r.height/r.width);
-    const dpr=Math.min(devicePixelRatio||1,2), sc=r.width*dpr/CW;
-    c.width=Math.round(r.width*dpr); c.height=Math.round(r.height*dpr);
-    g.setTransform(sc,0,0,sc,0,0);
-    g.fillStyle='#0f1930'; g.fillRect(0,0,CW,CH);
-    const L=74, R=CW-26, T=56, B=CH-118;
-    const COL=v=>lerpCol(BLUE,RED,clamp((v-40)/60,0,1));   // 40 이면 완전히 푸르게, 100 이면 붉게
-    g.strokeStyle='rgba(255,255,255,.18)'; g.lineWidth=1.5;
-    [0,25,50,75,100].forEach(v=>{ const y=B-(B-T)*v/100;
-      g.beginPath(); g.moveTo(L,y); g.lineTo(R,y); g.stroke();
-      g.fillStyle='#7f90a8'; g.font='600 12px sans-serif'; g.textAlign='right';
-      g.fillText(v===100?'많음':(v===0?'적음':''), L-8, y+4); });
-    g.textAlign='center'; g.fillStyle='#9fb6d4'; g.font='800 14px sans-serif';
-    g.save(); g.translate(22,(T+B)/2); g.rotate(-Math.PI/2);
-    g.fillText('탐사정이 실은 산소',0,0); g.restore();
-    const X=i=>L+(R-L)*i/(ROUTE.length-1);
-    /* 꺾은선 */
-    g.lineWidth=5; g.lineJoin='round';
-    for(let i=1;i<ROUTE.length;i++){
-      const y0=B-(B-T)*ROUTE[i-1][1]/100, y1=B-(B-T)*ROUTE[i][1]/100;
-      g.strokeStyle=COL(Math.min(ROUTE[i][1],ROUTE[i-1][1]));
-      g.beginPath(); g.moveTo(X(i-1),y0); g.lineTo(X(i),y1); g.stroke();
+  /* ---------- 2·3·4단계 : 그 부분만 떼어 낸 작은 그림 ---------- */
+  const VIEWS={ body:{x:132,y:368,w:640,h:540},
+                lung:{x:136,y:106,w:632,h:506},
+                o2  :{x:110,y:118,w:680,h:780} };
+  const MLOOP={ body:['ao','bc','vc'], lung:['pa','pc','pv'] };
+  function miniCtx(host, view){
+    const c=host&&host.querySelector('canvas'); if(!c) return null;
+    const r=host.getBoundingClientRect(); if(!r.width||!r.height) return null;
+    const dpr=Math.min(devicePixelRatio||1,2);
+    const wantW=Math.round(r.width*dpr), wantH=Math.round(r.height*dpr);
+    if(c.width!==wantW||c.height!==wantH){ c.width=wantW; c.height=wantH; }
+    const g=c.getContext('2d');
+    const sc=Math.min(r.width/view.w, r.height/view.h);
+    const ox=(r.width-view.w*sc)/2, oy=(r.height-view.h*sc)/2;
+    g.setTransform(dpr*sc,0,0,dpr*sc,(ox-view.x*sc)*dpr,(oy-view.y*sc)*dpr);
+    return g;
+  }
+  function miniFrame(which, host, dt){
+    const view=VIEWS[which], g=miniCtx(host,view); if(!g) return;
+    const oc=ctx, of=FOCUS;
+    ctx=g; FOCUS=which;
+    scene();
+    if(which==='o2'){ idleExchange(ex); }
+    else{
+      /* 이 길만 흰 점선으로 살아 있게 + 탐사정이 천천히 돈다 */
+      const ks=MLOOP[which], L=ks.map(k=>plen(P[k])), T=L.reduce((x,y)=>x+y,0);
+      ctx.strokeStyle='rgba(255,255,255,.8)'; ctx.lineWidth=4;
+      ctx.setLineDash([10,10]); ctx.lineDashOffset=-ex*40;
+      ks.forEach(k=>{ smooth(P[k]); ctx.stroke(); });
+      ctx.setLineDash([]);
+      let d=mt*T, kk=ks[0], uu=0;
+      for(let i=0;i<ks.length;i++){ if(d<L[i]||i===ks.length-1){ kk=ks[i]; uu=clamp(d/L[i],0,1); break; } d-=L[i]; }
+      if(kk==='bc'){ idleExchange(ex,'body'); drawExchange('body', ex); }
+      else if(kk==='pc'){ idleExchange(ex,'lung'); drawExchange('lung', ex); }
+      else idleExchange(ex);
+      const q=at(P[kk],uu);
+      subDraw(q.x,q.y,q.a, which==='body' ? (kk==='ao'?1:0) : (kk==='pv'?1:0));
     }
-    ROUTE.forEach((p,i)=>{
-      const y=B-(B-T)*p[1]/100;
-      g.fillStyle=COL(p[1]);
-      g.beginPath(); g.arc(X(i),y,7,0,7); g.fill();
-      g.save(); g.translate(X(i),B+14); g.rotate(-Math.PI/3.4);
-      g.fillStyle='#cfdcee'; g.font='700 12.5px sans-serif'; g.textAlign='right';
-      g.fillText(p[0],0,0); g.restore();
-    });
-    /* 변하는 두 곳만 표시 */
-    [[2,3,'세포에 산소를 줌','#7fa8ee'],[7,8,'허파에서 산소를 받음','#e0554a']].forEach(([i,j,t,col])=>{
-      const x=(X(i)+X(j))/2;
-      g.strokeStyle=col; g.lineWidth=2; g.setLineDash([5,5]);
-      g.beginPath(); g.moveTo(x,T-4); g.lineTo(x,B); g.stroke(); g.setLineDash([]);
-      g.fillStyle=col; g.font='800 13.5px sans-serif'; g.textAlign='center';
-      g.fillText(t,x,T-12);
-    });
-    g.fillStyle='#ffd27a'; g.font='800 15px sans-serif'; g.textAlign='center';
-    g.fillText('혈관을 지나는 동안에는 변하지 않는다 — 바뀌는 곳은 모세혈관 두 곳뿐', CW/2, T-34);
+    ctx=oc; FOCUS=of;
+  }
+
+  function loop(ts){
+    raf=requestAnimationFrame(loop);
+    if(!$('#scCirc').classList.contains('on')){ last=ts; return; }
+    let dt=Math.min((ts-last)/1000,.05); last=ts; ex+=dt; mt=(mt+dt*0.085)%1;
+    if(step===0) mainFrame(dt);
+    else if(step===1) miniFrame('body',$('#rMiniB'),dt);
+    else if(step===2) miniFrame('lung',$('#rMiniL'),dt);
+    else if(step===3) miniFrame('o2',$('#rMiniO'),dt);
   }
 
   function build(){
     if(built) return; built=true;
     $('#rRail').innerHTML=STEPS.map((x,i)=>'<button><span class="sn">'+(i+1)+'</span>'+x.n+'</button>').join('');
     $$('#rRail button').forEach((b,i)=>b.onclick=()=>setStep(i));
+    const CVS='<canvas style="position:absolute;inset:0;width:100%;height:100%"></canvas>';
     $('#rStage').innerHTML='<canvas id="cCirc" style="position:absolute;inset:0;width:100%;height:100%"></canvas>';
+    $('#rMiniB').innerHTML=CVS; $('#rMiniL').innerHTML=CVS; $('#rMiniO').innerHTML=CVS;
     cv=$('#cCirc'); ctx=cv.getContext('2d'); resize();
-    addEventListener('resize',()=>{ if($('#rStage').offsetParent){ resize(); if(step===3) drawChart(); } });
+    addEventListener('resize',()=>{ if($('#rStage').offsetParent) resize(); });
     $('#rPlay').onclick=()=>{ live=!live; started=true; $('#rPlay').textContent=live?'⏸ 멈춤':'▶ 출항'; };
     $('#rSlow').onclick=()=>{ slow=!slow; $('#rSlow').textContent=slow?'보통 속도':'천천히'; };
     $('#rBack0').onclick=()=>{ seg=0; u=0; };
+    /* 그림만 화면 가득 — 태블릿에서 한 바퀴를 크게 볼 때 */
+    const zoomOff=()=>{ $('#rStage').classList.remove('zoom'); $('#rZoomBg').classList.remove('on');
+      $('#rZoom').textContent='⛶ 크게 보기'; resize(); };
+    $('#rZoom').onclick=()=>{
+      const on=$('#rStage').classList.toggle('zoom');
+      $('#rZoomBg').classList.toggle('on',on);
+      $('#rZoom').textContent=on?'⤡ 원래대로':'⛶ 크게 보기';
+      resize();
+    };
+    $('#rZoomBg').onclick=zoomOff;
+    addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#rStage').classList.contains('zoom')) zoomOff(); });
+    /* 한 바퀴를 돈 뒤에는 원하는 자리로 직접 옮겨 볼 수 있다 */
+    (function(){
+      const sl=$('#rScrub'); if(!sl) return;
+      const grab=()=>{ sl.dataset.grab='1'; live=false; started=true;
+        $('#rPlay').textContent='▶ 출항'; };
+      const drop=()=>{ delete sl.dataset.grab; };
+      sl.addEventListener('pointerdown',grab);
+      sl.addEventListener('keydown',grab);
+      sl.addEventListener('input',()=>{ grab(); setCircT(+sl.value/1000); });
+      ['pointerup','pointercancel','blur'].forEach(e=>sl.addEventListener(e,drop));
+    })();
     blkB=blankCard($('#blkBody'),'cbody',()=>markDone(1));
     blkL=blankCard($('#blkLung'),'clung',()=>markDone(2));
     blkS=blankCard($('#blkSum'),'csum',()=>markDone(3));
